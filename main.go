@@ -2,52 +2,59 @@ package main
 
 import (
 	"fmt"
+	"go-gorm-postgresql/config"
 	"go-gorm-postgresql/models"
-	"log"
-	"os"
-
-	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"go-gorm-postgresql/repositories"
 )
 
 func main() {
-	// 環境変数の読み込み
-	if err := godotenv.Load(".env.development"); err != nil {
-		log.Fatal("Error loading .env.development file")
-	}
+	// データベース初期化
+	db := config.InitDB()
 
-	// データベース接続
-	dsn := os.Getenv("DATABASE_URL")
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic("データベースへの接続に失敗しました")
-	}
+	// リポジトリの作成
+	micropostRepo := repositories.NewMicropostRepository(db)
 
 	// マイグレーション
-	db.AutoMigrate(&models.Micropost{})
+	if err := micropostRepo.Migrate(); err != nil {
+		panic("マイグレーションに失敗しました")
+	}
+
+	// すべての投稿を削除
+	if err := micropostRepo.DeleteAll(); err != nil {
+		panic("投稿の削除に失敗しました")
+	}
 
 	// 作成
-	micropost := models.Micropost{
+	micropost := &models.Micropost{
 		Title: "最初の投稿",
 	}
-	db.Create(&micropost)
+	if err := micropostRepo.Create(micropost); err != nil {
+		panic("投稿の作成に失敗しました")
+	}
 
 	// 読み取り
-	var post models.Micropost
-	db.First(&post) // ID=1の投稿を取得
+	post, err := micropostRepo.FindFirst()
+	if err != nil {
+		panic("投稿の取得に失敗しました")
+	}
 	fmt.Printf("取得した投稿: %v\n", post)
 
 	// 更新
-	db.Model(&post).Update("Title", "更新された投稿")
+	if err := micropostRepo.Update(&post, "更新された投稿"); err != nil {
+		panic("投稿の更新に失敗しました")
+	}
 
 	// 複数の投稿を取得
-	var posts []models.Micropost
-	db.Find(&posts)
+	posts, err := micropostRepo.FindAll()
+	if err != nil {
+		panic("投稿の一覧取得に失敗しました")
+	}
 	for _, p := range posts {
 		fmt.Printf("投稿: %v\n", p)
 	}
 
 	// 削除
-	db.Delete(&post)
+	if err := micropostRepo.Delete(&post); err != nil {
+		panic("投稿の削除に失敗しました")
+	}
 }
