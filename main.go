@@ -3,14 +3,22 @@ package main
 import (
 	"fmt"
 	"go-gorm-postgresql/models"
+	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
+	// 環境変数の読み込み
+	if err := godotenv.Load(".env.development"); err != nil {
+		log.Fatal("Error loading .env.development file")
+	}
+
 	// データベース接続
-	dsn := "postgresql://postgres:postgres@localhost:5432/web_app_db_integration_go?sslmode=disable"
+	dsn := os.Getenv("DATABASE_URL")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("データベースへの接続に失敗しました")
