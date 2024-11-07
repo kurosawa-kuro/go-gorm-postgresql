@@ -5,6 +5,7 @@ import (
 	"go-gorm-postgresql/config"
 	"go-gorm-postgresql/models"
 	"go-gorm-postgresql/repositories"
+	"go-gorm-postgresql/seeders"
 )
 
 func main() {
@@ -24,9 +25,14 @@ func main() {
 		panic("投稿の削除に失敗しました")
 	}
 
+	// seederの実行
+	if err := seeders.SeedMicroposts(micropostRepo); err != nil {
+		panic("シードの作成に失敗しました")
+	}
+
 	// 作成
 	micropost := &models.Micropost{
-		Title: "最初の投稿",
+		Title: "4番目の投稿",
 	}
 	if err := micropostRepo.Create(micropost); err != nil {
 		panic("投稿の作成に失敗しました")
